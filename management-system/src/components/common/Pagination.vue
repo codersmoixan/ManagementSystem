@@ -33,10 +33,10 @@ export default {
   },
   methods: {
       handleSizeChange(data) {
-          console.log(data)
+          this.$emit('queryPageSize', data)
       },
-      handleCurrentChange() {
-          console.log(data)
+      handleCurrentChange(data) {
+          this.$emit('queryCurrentPage', data)
       }
   }
 };

@@ -5,7 +5,9 @@ import {Message} from 'element-ui'
 Vue.prototype.$message = Message
 
 // 员工管理
-import {UserList} from './user'
+import { UserList } from './user'
+// 权限管理
+import { Power, RoleList } from './power'
 
 // 登录界面
 const Login = () => import('@/views/login/Login.vue')
@@ -19,7 +21,10 @@ const router = new Router({
     { path: '/', redirect: '/login' },
     { path: '/login', component: Login },
     { path: '/user', redirect: '/user/list' },
-    { path: '/user/list', component: UserList }
+    { path: '/user/list', component: UserList },
+    { path: '/power', redirect: '/power/role' },
+    { path: '/power/role', component: RoleList },
+    { path: '/power/manage', component: Power }
   ]
 })
 

@@ -25,7 +25,8 @@ import {
     Tooltip,
     Dialog,
     FormItem,
-    Option
+    Option,
+    Tag
   } from 'element-ui'
   
   Vue.use(Button)
@@ -51,6 +52,7 @@ import {
   Vue.use(Dialog)
   Vue.use(FormItem)
   Vue.use(Option)
+  Vue.use(Tag)
   
   
   

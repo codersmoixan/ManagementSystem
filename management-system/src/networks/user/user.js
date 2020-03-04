@@ -30,3 +30,22 @@ import {httpGet, httpPost, httpPut, httpDelete} from '../quest'
  export function deleteUserData(id) {
      return httpDelete(`/api/private/v1/users/${id}`)
  }
+
+ // 根据用户名查询用户信息
+ export function queryUserData(data) {
+     return httpGet('/api/private/v1/users', {
+         query: data.query,
+         pagenum: data.pagenum,
+         pagesize: data.pagesize
+     })
+ }
+
+ // 获取角色列表
+ export function getUserRoleList(data) {
+    return httpGet('/api/private/v1/roles')
+ }
+
+ // 分配角色
+ export function setUserRole(id) {
+     return httpPut(`/api/private/v1/users/${id}/role`)
+ }

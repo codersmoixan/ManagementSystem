@@ -7,12 +7,12 @@
         <el-breadcrumb-item>用户列表</el-breadcrumb-item>
       </el-breadcrumb>
     </div>
-    <div class="zj-user-list">
-      <div class="zj-handle">
+    <div class="zj-user-list zj-base-container">
+      <div class="zj-handle zj-base-handle">
         <div class="zj-search-input">
-          <el-input placeholder="请输入内容" v-model="searchData" class="zj-input">
+          <el-input placeholder="请输入内容" v-model="searchData.query" class="zj-input">
             <template slot="append">
-              <el-button type="primary">
+              <el-button type="primary" @click="queryUser">
                 <i class="el-icon-search"></i>
               </el-button>
             </template>
@@ -22,7 +22,7 @@
           <el-button type="primary" @click="dialogFormVisible  = true">添加用户</el-button>
         </div>
       </div>
-      <div class="zj-user-table-list clear-fix">
+      <div class="zj-user-table-list clear-fix zj-base-lis-box">
         <el-table :data="userList" border stripe style="width: 100%">
           <el-table-column type="index" width="50" label="#" fixed="left"></el-table-column>
           <el-table-column prop="username" label="姓名" width="200"></el-table-column>
@@ -45,7 +45,8 @@
             </template>
           </el-table-column>
         </el-table>
-        <pagination :pageParams="pageParams" class="zj-page" />
+        <pagination :pageParams="pageParams" class="zj-page" 
+        @queryPageSize="queryPageUserData" @queryCurrentPage="queryCurrentPage" />
       </div>
     </div>
     <div class="zj-add-user">
@@ -71,7 +72,7 @@
       </el-dialog>
     </div>
     <div class="zj-edit-user">
-      <el-dialog title="编辑用户信息" :visible.sync="dialogFormVisible_two" width="40%">
+      <el-dialog title="编辑用户信息" :visible.sync="dialogFormVisible_edit" width="40%">
         <el-form :model="editDataForm" :rules="rules">
           <el-form-item label="用户名" :label-width="formLabelWidth" prop="username">
             <el-input v-model="editDataForm.username" autocomplete="off" disabled=""></el-input>
@@ -84,8 +85,29 @@
           </el-form-item>
         </el-form>
         <div slot="footer" class="dialog-footer">
-          <el-button @click="dialogFormVisible_two = false">取 消</el-button>
+          <el-button @click="dialogFormVisible_edit = false">取 消</el-button>
           <el-button type="primary" @click="questEditUserData">确 定</el-button>
+        </div>
+      </el-dialog>
+    </div>
+    <div class="zj-set-user">
+      <el-dialog title="分配角色" :visible.sync="dialogFormVisible_set" width="40%">
+        <el-form :model="setDataForm" :rules="rules">
+          <el-form-item label="当前用户名" :label-width="formLabelWidth" prop="username">
+            <el-input v-model="setDataForm.username" autocomplete="off" disabled></el-input>
+          </el-form-item>
+          <el-form-item label="当前角色" :label-width="formLabelWidth" prop="email">
+            <el-input v-model="setDataForm.current_role_name" autocomplete="off" disabled></el-input>
+          </el-form-item>
+          <el-form-item label="分配新角色" :label-width="formLabelWidth" prop="phone">
+            <el-select v-model="setDataForm.rolenameId" placeholder="请选择角色" class="zj-setuserrole-input">
+              <el-option :label="item.roleName" :value="item.id" v-for="item in rolenames" :key="item.id"></el-option>
+            </el-select>
+          </el-form-item>
+        </el-form>
+        <div slot="footer" class="dialog-footer">
+          <el-button @click="dialogFormVisible_set = false">取 消</el-button>
+          <el-button type="primary" @click="questSetUserData">确 定</el-button>
         </div>
       </el-dialog>
     </div>
@@ -96,7 +118,10 @@
 import { getUserDataAll, 
 addUserData, 
 editUserData,
-deleteUserData } from "@/networks/user/user";
+deleteUserData,
+queryUserData,
+getUserRoleList,
+setUserRole } from "@/networks/user/user";
 
 import Pagination from "@/components/common/Pagination";
 
@@ -104,12 +129,16 @@ export default {
   name: "PersonnelList",
   data() {
     return {
-      searchData: "",
+      searchData: {
+        query: '',
+        pagenum: '',
+        pagesize: ''
+      },
       userList: [],
       questParams: { query: "", pagenum: 1, pagesize: 10 },
       pageParams: {
         current_page: 4,
-        page_sizes: [2, 5, 10, 15],
+        page_sizes: [10, 15, 20],
         page_size: 100,
         total: 400
       }, 
@@ -140,8 +169,15 @@ export default {
         email: '',
         phone: ''
       }, // 编辑用户信息
-      dialogFormVisible_two: false,
-      questEditData: {} // 提交修改的数据
+      dialogFormVisible_edit: false,
+      questEditData: {}, // 提交修改的数据
+      dialogFormVisible_set: false,
+      setDataForm: {
+        username: '',
+        current_role_name: '',
+        rolenameId: []
+      },
+      rolenames: [], // 角色列表
     };
   },
   mounted() {
@@ -178,6 +214,7 @@ export default {
       // 发送请求添加用户信息
       let res = await addUserData(this.addDataForm)
       if(res.meta.status === 201) {
+        this._getUserDataAll()
         this.$message.success('创建成功！')
         this.dialogFormVisible = false // 关闭dialog
       }else {
@@ -192,7 +229,7 @@ export default {
       this.editDataForm.phone = data.mobile
 
       // 打开编辑界面
-      this.dialogFormVisible_two = true
+      this.dialogFormVisible_edit = true
     },
     async questEditUserData() {
       // 判断是否填入信息
@@ -211,7 +248,7 @@ export default {
         return this.$message.warning(res.meta.msg)
       }
       // 更新成功
-      this.dialogFormVisible_two = false // 关闭编辑信息界面
+      this.dialogFormVisible_edit = false // 关闭编辑信息界面
       this._getUserDataAll() // 重新渲染页面
       this.$message.success(res.meta.msg)
 
@@ -240,8 +277,57 @@ export default {
         }); 
     },
     /**分配角色信息 */
-    handleSet(data) {
+    // 获取所有角色信息列表
+    async handleSet(data) {
+      this.rolenames = []
+      this.dialogFormVisible_set = true
+      
+      this.setDataForm.username = data.username
+      this.setDataForm.current_role_name = data.role_name
+      
+      // 发送请求获取所有的角色列表
+      let res = await getUserRoleList()
+      if(res.meta.status !== 200) return this.$message.warning(res.meta.msg)
+      this.rolenames.push(...res.data)
+    },
+    // 提交修改后的角色信息
+    async questSetUserData(){
+      // 判断用户是否选择了角色
+      if(!this.setDataForm.rolenameId) return this.$message.warning('请选择要分配的角色！')
 
+      let id = this.setDataForm.rolenameId
+      let res = await setUserRole(id)
+      console.log(res)
+      if(res.meta.status !== 200) return this.$message.warning(res.meta.msg)
+      this._getUserDataAll()
+      this.dialogFormVisible_set = false
+      this.$message.success(res.meta.msg)
+    },
+    /**查询用户信息 */
+    async queryUser() {
+      this.searchData.pagenum = this.questParams.pagenum
+      this.searchData.pagesize = this.questParams.pagesize
+
+      let res = await queryUserData(this.searchData)
+      console.log(res)
+      if(res.meta.status !== 200) return this.$message.warning(res.meta.msg)
+
+      // 请求成功
+      this.userList = []
+      this.userList.push(...res.data.users)
+      this.pageParams.total = res.data.total
+      this.pageParams.current_page = res.data.pagenum
+      this.$message.success(res.meta.msg)
+    },
+    /**分页显示用户信息 */
+    queryPageUserData(index) {
+      this.questParams.pagesize = index
+      this._getUserDataAll()
+    },
+    /**切换分页 */
+    queryCurrentPage(index) {
+      this.questParams.pagenum = index
+      this._getUserDataAll()
     }
   }
 };
@@ -250,15 +336,9 @@ export default {
 <style scoped lang="less">
 .zj-list-container {
   .zj-user-list {
-    margin-top: 20px;
-    width: 100%;
-    background-color: #fff;
-    border-radius: 5px;
-    box-shadow: 1px 1px 0px 0px rgba(0, 0, 0, 0.15);
 
     .zj-handle {
       display: flex;
-      padding: 20px 0px 0px 20px;
       width: 35%;
       .zj-search-input {
         width: 100%;
@@ -272,11 +352,13 @@ export default {
       }
     }
   }
-  .zj-user-table-list {
-    padding: 20px;
-  }
   .zj-page {
     margin-top: 20px;
+    float: left;
+  }
+
+  .zj-setuserrole-input {
+    margin: 0;
     float: left;
   }
 }

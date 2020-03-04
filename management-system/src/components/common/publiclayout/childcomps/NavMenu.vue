@@ -64,8 +64,8 @@ export default {
           icon: "el-icon-first-aid-kit",
           index: "2",
           children: [
-            { index: "2-1", name: "角色列表", path: "", icon: "el-icon-menu" },
-            { index: "2-2", name: "权限列表", path: "", icon: "el-icon-menu" }
+            { index: "2-1", name: "角色列表", path: "/power/role", icon: "el-icon-menu" },
+            { index: "2-2", name: "权限列表", path: "/power/manage", icon: "el-icon-menu" }
           ]
         },
         {
@@ -142,5 +142,4 @@ export default {
 }
 </style>
 <style scoped lang='less'>
-
 </style>
